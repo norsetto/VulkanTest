@@ -15,9 +15,11 @@
 #include <limits>
 #include <array>
 #include <chrono>
+#include <string>
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
+std::string WINDOW_TITLE = "Vulkan window";
 
 VkInstance instance = VK_NULL_HANDLE;
 VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -884,7 +886,7 @@ int main() {
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-		GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan window", nullptr, nullptr);
+		GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, WINDOW_TITLE.c_str(), nullptr, nullptr);
 		glfwSetWindowSizeCallback(window, onWindowResize);
 
 		//Set instance
@@ -1125,7 +1127,8 @@ int main() {
 			total_time += frameTime;
 			frame++;
 			if (total_time >= TIME_INTERVAL) {
-				std::cout << ((float)frame / total_time) << std::endl;
+				std::string  window_title = WINDOW_TITLE + " - " + std::to_string(((float)frame / total_time)) + " fps";
+				glfwSetWindowTitle(window, window_title.c_str());
 				frame = 0;
 				total_time = 0.0f;
 			}
