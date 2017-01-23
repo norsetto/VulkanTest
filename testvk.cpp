@@ -291,16 +291,11 @@ static void set_physical_device() {
 
 	std::cout << "physical devices:" << std::endl;
 
+	//We select the (first detected) discrete GPU with the greatest local heap memory
 	const char * deviceType[5] = { "OTHER", "INTEGRATED GPU", "DISCRETE GPU", "VIRTUAL GPU", "CPU" };
-
-	/*
-	We just select the first device which is a discrete GPU
-	TODO: in cases with more than 1 discrete GPU select the one with more memory
-	using vkGetPhysicalDeviceMemoryProperties
-	TODO: allow the user to change selected device via command line option
-	*/
 	int selectedDevice = -1;
 	int deviceId = 0;
+	VkDeviceSize deviceMemory = 0;
 	for (const auto& device : devices) {
 		VkPhysicalDeviceProperties device_property;
 		vkGetPhysicalDeviceProperties(device, &device_property);
@@ -308,8 +303,18 @@ static void set_physical_device() {
 		std::cout << "\tName           : " << device_property.deviceName << std::endl;
 		std::cout << "\tDriver version : " << device_property.driverVersion << std::endl;
 		std::cout << "\tType           : " << deviceType[device_property.deviceType] << std::endl;
-		if ((selectedDevice < 0) && (device_property.deviceType == 2)) {
+
+		vkGetPhysicalDeviceMemoryProperties(device, &memProperties);
+		VkDeviceSize memoryHeap = 0;
+		for (uint32_t i = 0; i < memProperties.memoryHeapCount; i++) {
+			if ((memProperties.memoryHeaps[i].flags == VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) && (memProperties.memoryHeaps[i].size > memoryHeap)) {
+				memoryHeap = memProperties.memoryHeaps[i].size;
+			}
+		}
+		std::cout << "\tMemory         : " << memoryHeap << " bytes" << std::endl;
+		if ((device_property.deviceType == 2) && (memoryHeap > deviceMemory)) {
 			selectedDevice = deviceId;
+			deviceMemory = memoryHeap;
 		}
 		deviceId++;
 	}
@@ -321,6 +326,7 @@ static void set_physical_device() {
 	physical_device = devices[selectedDevice];
 	std::cout << "Selected device " << selectedDevice << std::endl;
 
+	//Do I really want to cache this!?
 	vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
 }
 
